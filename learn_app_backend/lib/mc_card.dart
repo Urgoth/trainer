@@ -47,22 +47,50 @@ List<Answer> answersFromJsonString(String jsonString) {
 
 /// The data model for a flash card.
 class MultipleChoiceCard {
-  final String _id;
-  final DateTime lastModified;
-  final String question;
-  final List<Answer> _answers;
+  String _id;
+  final String authorId;
+  DateTime _lastModified;
+  final DateTime _created;
+  String _question;
+  List<Answer> _answers; // ignore: prefer_final_fields
 
   String get id => _id;
+  set id(String newId) {
+    if (newId.isNotEmpty) {
+      _id = newId;
+    }
+  }
+
+  DateTime get lastModified => _lastModified;
+  set lastModified(DateTime time) {
+    if (time.isAfter(_lastModified)) {
+      _lastModified = time;
+    }
+  }
+
+  String get question => _question;
+  set question(String newQuestion) {
+    if (newQuestion.isNotEmpty) {
+      _question = newQuestion;
+    }
+  }
+
+  DateTime get created => _created;
 
   /// A deep copy of the answer list from this [MultipleChoiceCard].
   List<Answer> get answers => List<Answer>.from(_answers);
 
   MultipleChoiceCard({
     required String id,
-    required this.lastModified,
-    required this.question,
+    required this.authorId,
+    DateTime? created,
+    DateTime? lastModified,
+    required String question,
     required List<(String, bool)> answers,
   })  : _id = id,
+        _created = created ?? DateTime.now().toUtc(),
+        _lastModified = lastModified ?? DateTime.now().toUtc(),
+        _question = question,
         _answers = answers {
     if (!validateAnswerList()) {
       throw InvalidAnswerList(
@@ -75,8 +103,10 @@ class MultipleChoiceCard {
   ///
   MultipleChoiceCard.fromJson(Map<String, dynamic> json)
       : _id = json['id'] as String,
-        lastModified = DateTime.parse(json['lastModified']),
-        question = json['question'] as String,
+        authorId = json['authorId'] as String,
+        _lastModified = DateTime.parse(json['lastModified']),
+        _created = DateTime.parse(json['created']),
+        _question = json['question'] as String,
         _answers =
             List<Answer>.from(json['answers'].map((e) => answerFromJson(e))) {
     if (!validateAnswerList()) {
@@ -91,8 +121,10 @@ class MultipleChoiceCard {
   Map<String, dynamic> toJson() {
     return {
       'id': _id,
-      'lastModified': lastModified.toString(),
-      'question': question,
+      'authorId': authorId,
+      'lastModified': _lastModified.toIso8601String(),
+      'created': _created.toIso8601String(),
+      'question': _question,
       'answers': List.from(_answers.map((e) => answerToJson(e))),
     };
   }

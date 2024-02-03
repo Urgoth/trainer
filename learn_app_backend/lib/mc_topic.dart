@@ -4,44 +4,79 @@ import 'mc_card.dart';
 
 /// The data model for a module.
 class McTopic {
-  int lastCardId;
-  final String _id;
-  final String _authorId;
+  String _id;
+  int _lastCardId;
+  final DateTime _created;
   DateTime _lastModified;
-  final String name;
-  final String description;
+  String _name;
+  String _description;
+  final String _authorId;
   final List<MultipleChoiceCard> _learnCards;
+
+  String get id => _id;
+  set id(String newId) {
+    if (newId.isNotEmpty) {
+      _id = newId;
+    }
+  }
+
+  String get name => _name;
+  set name(String newname) {
+    if (newname.isNotEmpty) {
+      _name = newname;
+    }
+  }
+
+  String get description => _description;
+  set description(String newdescription) {
+    if (newdescription.isNotEmpty) {
+      _description = newdescription;
+    }
+  }
 
   /// A deep copy of the list of [MultipleChoiceCard]s from this Module
   List<MultipleChoiceCard> get learnCards =>
       List<MultipleChoiceCard>.from(_learnCards);
 
-  String? get id => _id;
   String get authorId => _authorId;
+
+  DateTime get created => _created;
+
   DateTime get lastModified => _lastModified;
+  set lastModified(DateTime time) {
+    if (time.isAfter(_lastModified)) {
+      _lastModified = time;
+    }
+  }
 
   McTopic({
-    this.lastCardId = 0,
+    int lastCardId = 0,
     String? id,
     required String authorId,
     DateTime? lastModified,
-    required this.name,
-    required this.description,
+    DateTime? created,
+    required String name,
+    required String description,
     required List<MultipleChoiceCard> learnCards,
-  })  : _id = id ?? UniqueKey().toString(),
+  })  : _lastCardId = lastCardId,
+        _description = description,
+        _name = name,
+        _id = id ?? UniqueKey().toString(),
         _authorId = authorId,
         _learnCards = learnCards,
-        _lastModified = lastModified ?? DateTime.now();
+        _created = created ?? DateTime.now().toUtc(),
+        _lastModified = lastModified ?? DateTime.now().toUtc();
 
   /// Appends the given card onto the List of [MultipleChoiceCard]s of the [McTopic].
   ///
-  addCard(String question, List<Answer> answers) {
+  addCard(String question, List<Answer> answers, [String? authorId]) {
     DateTime lastModified = DateTime.now();
-    lastCardId = lastCardId + 1;
-    String learnCardId = _id + lastCardId.toString();
+    _lastCardId = _lastCardId + 1;
+    String learnCardId = _id + _lastCardId.toString();
 
     _learnCards.add(MultipleChoiceCard(
         id: learnCardId,
+        authorId: authorId ?? _authorId,
         lastModified: lastModified,
         question: question,
         answers: answers));
@@ -59,11 +94,12 @@ class McTopic {
   ///
   McTopic.fromJson(Map<String, dynamic> json)
       : _id = json['id'] as String,
-        _authorId = json['_authorId'],
-        lastCardId = json['lastCardId'],
+        _authorId = json['authorId'],
+        _lastCardId = json['lastCardId'],
+        _created = DateTime.parse(json['created']),
         _lastModified = DateTime.parse(json['lastModified']),
-        name = json['name'] as String,
-        description = json['description'] as String,
+        _name = json['name'] as String,
+        _description = json['description'] as String,
         _learnCards = List<MultipleChoiceCard>.from(json['learnCards']
             .map((element) => MultipleChoiceCard.fromJson(element)));
 
@@ -72,11 +108,12 @@ class McTopic {
   Map<String, dynamic> toJson() {
     return {
       'id': _id,
-      '_authorId': _authorId,
-      'lastCardId': lastCardId,
-      'lastModified': _lastModified.toString(),
-      'name': name,
-      'description': description,
+      'authorId': _authorId,
+      'lastCardId': _lastCardId,
+      'created': _created.toIso8601String(),
+      'lastModified': _lastModified.toIso8601String(),
+      'name': _name,
+      'description': _description,
       'learnCards': List<dynamic>.from(_learnCards.map((e) => e.toJson())),
     };
   }

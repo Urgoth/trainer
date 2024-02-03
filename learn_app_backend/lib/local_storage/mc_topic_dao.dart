@@ -1,29 +1,36 @@
 import 'package:flutter/foundation.dart';
+import 'package:learn_app_backend/learn_app_backend.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
 import '../mc_topic.dart';
 
-/// Local storage functionality for module data.
+/// Local storage functionality for [McTopic] data.
 class McTopicDao extends ChangeNotifier {
   McTopicDao() {
     Future(() => _loadData());
   }
 
-  final List<McTopic> _modules = [];
+  final List<McTopic> _topics = [];
 
-  /// Returns a flat copy of all modules.
+  /// A list of [McTopic]s that have to be synced with the Database
+  final List<McTopic> _toSync = [];
+
+  /// A list of [McTopic]s that have to be inserted into the Database
+  final List<McTopic> _toUpload = [];
+
+  /// Returns a flat copy of all [McTopic]s.
   ///
-  List<McTopic> findAll() => _modules.toList();
+  List<McTopic> findAll() => _topics;
 
-  /// Deletes the module object with the given id.
+  /// Deletes the [McTopic] object with the given id.
+  ///
   /// Return true = delete ok, false = no object with the given id found.
-  ///
   Future<bool> delete(String id) async {
-    var elemIndex = _modules.indexWhere((element) => element.id == id);
+    var elemIndex = _topics.indexWhere((element) => element.id == id);
 
     if (elemIndex >= 0) {
-      _modules.removeAt(elemIndex);
+      _topics.removeAt(elemIndex);
       await _saveData();
       notifyListeners();
       return true;
@@ -32,12 +39,17 @@ class McTopicDao extends ChangeNotifier {
   }
 
   /// Updates the module in the storage with the given module object.
-  /// Return true = update ok, false = no record object with the given id found.
   ///
-  Future<bool> update(McTopic module) async {
-    var elemIndex = _modules.indexWhere((element) => element.id == module.id);
+  /// Return true = update ok, false = no record object with the given id found.
+  Future<bool> update(McTopic topic) async {
+    var elemIndex = _topics.indexWhere((element) => element.id == topic.id);
+    var syncIndex = _toSync.indexWhere((element) => element.id == topic.id);
+
     if (elemIndex >= 0) {
-      _modules[elemIndex] = module;
+      _topics[elemIndex] = topic;
+      if (syncIndex < 0) {
+        _toSync.add(topic);
+      }
       await _saveData();
       notifyListeners();
       return true;
@@ -45,35 +57,46 @@ class McTopicDao extends ChangeNotifier {
     return false;
   }
 
-  /// Persists the given module object.
+  /// Persists the given [McTopic] object.
+  ///
   /// Return true = persist ok, false = error module object not persisted!
   /// Side effects: module.id = _nextId
-  ///
-  Future<bool> persist(McTopic module) async {
-    if (_modules.indexWhere((element) => element.id == module.id) >= 0) {
+  Future<bool> persist(McTopic topic) async {
+    if (_topics.indexWhere((element) => element.id == topic.id) >= 0) {
       if (kDebugMode) {
-        print('${module.name}[${module.id}] already in local storage');
+        print('${topic.name}[${topic.id}] already in local storage');
       }
       return false;
     }
-    _modules.add(module);
+    _topics.add(topic);
+    _toUpload.add(topic);
     await _saveData();
     notifyListeners();
     if (kDebugMode) {
-      print('${module.name}[${module.id}] saved in local storage');
+      print('${topic.name}[${topic.id}] saved in local storage');
     }
     return true;
   }
 
-  /// Loads the module data from the local storage
+  /// Loads all [McTopic] data from the local storage
   ///
   Future<void> _loadData() async {
     final storage = await SharedPreferences.getInstance();
-    final modules = storage.getStringList('modules');
+    final topics = storage.getStringList('modules');
+    final syncList = storage.getStringList('syncList');
+    final uploadList = storage.getStringList('uploadList');
 
-    if (modules != null && modules.isNotEmpty) {
-      _modules.clear();
-      _modules.addAll(modules.map((r) => McTopic.fromJson(jsonDecode(r))));
+    if (topics != null && topics.isNotEmpty) {
+      _topics.clear();
+      _topics.addAll(topics.map((r) => McTopic.fromJson(jsonDecode(r))));
+    }
+    if (syncList != null && syncList.isNotEmpty) {
+      _toSync.clear();
+      _toSync.addAll(syncList.map((r) => McTopic.fromJson(jsonDecode(r))));
+    }
+    if (uploadList != null && uploadList.isNotEmpty) {
+      _toUpload.clear();
+      _toUpload.addAll(uploadList.map((r) => McTopic.fromJson(jsonDecode(r))));
     }
     notifyListeners();
   }
@@ -88,8 +111,20 @@ class McTopicDao extends ChangeNotifier {
   /// Saves all data into the local storage.
   Future<void> _saveData() async {
     final storage = await SharedPreferences.getInstance();
-    final modules = _modules.map((card) => jsonEncode(card.toJson())).toList();
-    storage.setStringList('modules', modules);
+    final topics = _topics.map((card) => jsonEncode(card.toJson())).toList();
+    final syncList = _toSync.map((card) => jsonEncode(card.toJson())).toList();
+    final uploadList =
+        _toUpload.map((card) => jsonEncode(card.toJson())).toList();
+    storage.setStringList('modules', topics);
+    storage.setStringList('syncList', syncList);
+    storage.setStringList('uploadList', uploadList);
+  }
+
+  Future<bool> syncWithDB() async {
+    for (var ele in _toUpload) {
+      await DataBaseHandler.insertMcTopic(ele);
+    }
+    return true;
   }
 
   /// Loads all modules with id from [ids] into the local storage.

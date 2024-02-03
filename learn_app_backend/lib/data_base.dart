@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
-import 'package:learn_app_backend/mc_card.dart';
 import 'package:pocketbase/pocketbase.dart';
 
 import 'mc_topic.dart';
+import 'mc_card.dart';
 
 final pb = PocketBase('http://172.17.0.2:8080/');
 
@@ -58,35 +58,92 @@ class DataBaseHandler {
     return true;
   }
 
+  /// insert [McTopic] into the Database and updates ids.
   static Future<bool> insertMcTopic(McTopic topic) async {
-    final body = <String, dynamic>{
-      "mc_topic_id": topic.id,
-      "name": topic.name,
-      "description": topic.description,
-      "author": topic.authorId,
-      "moderator": [],
-    };
     try {
-      final result = await pb.collection('mc_topics').create(body: body);
+      List<String> cardIds = [];
+      for (var card in topic.learnCards) {
+        final body = <String, dynamic>{
+          "question": card.question,
+          "answers": answersToJsonString(card),
+          "author": card.authorId,
+          "moderators": [],
+        };
+
+        var res = await pb.collection('mc_cards').create(body: body);
+        card.id = res.id;
+        cardIds.add(card.id);
+        card.lastModified = DateTime.parse(res.updated);
+        if (kDebugMode) {
+          print(res);
+        }
+      }
+
+      // create the mc_topics entry
+      final topicsBody = <String, dynamic>{
+        "name": topic.name,
+        "description": topic.description,
+        "mc_cards": cardIds,
+        "author": topic.authorId,
+        "moderator": [],
+      };
+
+      final result = await pb.collection('mc_topics').create(body: topicsBody);
+      topic.id = result.id;
+      topic.lastModified = DateTime.parse(result.updated);
       if (kDebugMode) {
         print(result);
       }
-      for (var card in topic.learnCards) {
+
+      return true;
+    } on ClientException catch (e) {
+      if (kDebugMode) {
+        print('Statuscode: ${e.statusCode}');
+        print('Statuscode: ${e.response}');
+      }
+      return false;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<bool> _appendCardsToMcTopic(
+      McTopic topic, List<MultipleChoiceCard> cards) async {
+    try {
+      List<String> cardIds = [];
+      for (var card in cards) {
         final body = <String, dynamic>{
-          "mc_topic_id": topic.id,
-          "mc_card_id": card.id,
           "question": card.question,
           "answers": answersToJsonString(card),
-          "author": topic.authorId,
+          "author": card.authorId,
           "moderators": [],
         };
-        final bodyLinkTable = <String, dynamic>{
-          "mc_topic_id": topic.id,
-          "mc_card_id": card.id,
-        };
 
-        await pb.collection('mc_cards').create(body: body);
+        var res = await pb.collection('mc_cards').create(body: body);
+        card.id = res.id;
+        cardIds.add(card.id);
+        card.lastModified = DateTime.parse(res.updated);
+        if (kDebugMode) {
+          print(res);
+        }
       }
+
+      // create the mc_topics entry
+      final topicsBody = <String, dynamic>{
+        "name": topic.name,
+        "description": topic.description,
+        "mc_cards": cardIds,
+        "author": topic.authorId,
+        "moderator": [],
+      };
+
+      final result = await pb.collection('mc_topics').create(body: topicsBody);
+      topic.id = result.id;
+      topic.lastModified = DateTime.parse(result.updated);
+      if (kDebugMode) {
+        print(result);
+      }
+
       return true;
     } on ClientException catch (e) {
       if (kDebugMode) {
