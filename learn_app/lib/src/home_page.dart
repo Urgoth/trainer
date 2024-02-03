@@ -18,7 +18,9 @@ class HomePage extends StatelessWidget {
           child: Row(
             children: [
               IconButton(
-                onPressed: () {},
+                onPressed: () {
+                  DataBaseHandler.insertMcTopic(testTopic());
+                },
                 icon: const Icon(Icons.home),
               ),
             ],

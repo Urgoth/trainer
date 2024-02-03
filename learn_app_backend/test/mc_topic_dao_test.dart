@@ -51,5 +51,26 @@ void main() {
       expect(topic?.learnCards != null, true);
       expect(topic?.learnCards.length, 21);
     });
+
+    test('update() new id', () async {
+      var topic = mcTopicDao?.findAll()[0];
+      String? oldTopicId = topic?.id;
+      expect(topic != null, true);
+      expect(topic?.learnCards != null, true);
+      expect(topic?.learnCards.length, 20);
+
+      const String newId = 'newId';
+      topic?.id = newId;
+      final result = await mcTopicDao?.update(topic as McTopic);
+      expect(result, true);
+
+      topic = mcTopicDao?.findAll()[0];
+      expect(topic != null, true);
+      expect(topic?.id != oldTopicId, true);
+      expect(topic?.id, newId);
+      expect(topic?.name, 'Trivia');
+      expect(topic?.learnCards != null, true);
+      expect(topic?.learnCards.length, 20);
+    });
   });
 }

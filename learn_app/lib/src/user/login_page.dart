@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:form_validation/form_validation.dart';
 import 'package:learn_app/src/home_page.dart';
-import 'package:learn_app_backend/pocketbase.dart';
+import 'package:learn_app_backend/learn_app_backend.dart';
 
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
