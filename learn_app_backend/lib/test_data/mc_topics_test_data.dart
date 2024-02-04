@@ -25,3 +25,15 @@ McTopic testTopic2() {
   }
   return testTopic;
 }
+
+McTopic testTopicEineFrage() {
+  McTopic testTopic = McTopic(
+      authorId: '5pnwul2gbstia35',
+      name: 'Ich hab da ma ne Frage',
+      description: 'Die wirklich wichtige Frage',
+      learnCards: <MultipleChoiceCard>[]);
+  for (var card in testCards.sublist(0, 1)) {
+    testTopic.addCard(card['question'], card['answers']);
+  }
+  return testTopic;
+}

@@ -103,8 +103,8 @@ class MultipleChoiceCard {
   ///
   MultipleChoiceCard.fromJson(Map<String, dynamic> json)
       : _id = json['id'] as String,
-        authorId = json['authorId'] as String,
-        _lastModified = DateTime.parse(json['lastModified']),
+        authorId = json['author'] as String,
+        _lastModified = DateTime.parse(json['updated']),
         _created = DateTime.parse(json['created']),
         _question = json['question'] as String,
         _answers =
@@ -121,8 +121,8 @@ class MultipleChoiceCard {
   Map<String, dynamic> toJson() {
     return {
       'id': _id,
-      'authorId': authorId,
-      'lastModified': _lastModified.toIso8601String(),
+      'author': authorId,
+      'updated': _lastModified.toIso8601String(),
       'created': _created.toIso8601String(),
       'question': _question,
       'answers': List.from(_answers.map((e) => answerToJson(e))),

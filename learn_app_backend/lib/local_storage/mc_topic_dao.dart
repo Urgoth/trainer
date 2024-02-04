@@ -127,6 +127,10 @@ class McTopicDao extends ChangeNotifier {
     return true;
   }
 
+  // Future<bool> loadFromDB(String topidId) async {
+  //   return await
+  // }
+
   /// Loads all modules with id from [ids] into the local storage.
   // Future<void> loadModulesFromDB(List<int> ids) async {
   //   var localIds = _modules.map((e) => e.id).toList();

@@ -19,9 +19,21 @@ class HomePage extends StatelessWidget {
             children: [
               IconButton(
                 onPressed: () {
-                  DataBaseHandler.insertMcTopic(testTopic());
+                  DataBaseHandler.insertMcTopic(testTopicEineFrage());
                 },
                 icon: const Icon(Icons.home),
+              ),
+              IconButton(
+                onPressed: () {
+                  DataBaseHandler.syncTopic(testTopicEineFrage());
+                },
+                icon: const Icon(Icons.upload),
+              ),
+              IconButton(
+                onPressed: () {
+                  DataBaseHandler.getTopic('apljwcfxtqmfwcc');
+                },
+                icon: const Icon(Icons.download),
               ),
             ],
           ),
